@@ -123,8 +123,11 @@ func (c *nvmeChecker) check(ctx context.Context, device string) error {
 	return err
 }
 
-// runNVMeCheckDevice runs `cmd[0] cmd[1:]... <device>` once and parses the
-// trailing integer N from the tool's stdout (format "<device>: <N>").
+// runNVMeCheckDevice runs `cmd[0] cmd[1:]... <name>` once and parses the
+// trailing integer N from the tool's stdout (format "<name>: <N>").
+//
+// The device name is passed WITHOUT the leading "/dev/" (the Sails tool rejects
+// a "/dev/"-prefixed argument), e.g. "/dev/nvme0n1" is passed as "nvme0n1".
 //
 //	N == 1 (supported)                               -> nil
 //	N == 0 (unsupported)                             -> codes.FailedPrecondition
@@ -132,7 +135,8 @@ func (c *nvmeChecker) check(ctx context.Context, device string) error {
 func runNVMeCheckDevice(ctx context.Context, cmd []string, device string) error {
 	logger := log.FromContext(ctx)
 
-	args := append(append([]string{}, cmd[1:]...), device)
+	name := strings.TrimPrefix(device, "/dev/")
+	args := append(append([]string{}, cmd[1:]...), name)
 	out, err := exec.CommandContext(ctx, cmd[0], args...).Output()
 	if err != nil {
 		// The tool reports its verdict on stdout, so a non-zero exit does not

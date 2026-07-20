@@ -86,6 +86,15 @@ func TestRunNVMeCheckDevice(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			// The device must reach the tool WITHOUT a "/dev/" prefix; the stub
+			// reports 9 (error) if it still sees one.
+			name: "device is passed without /dev/ prefix",
+			cmd: func(t *testing.T) []string {
+				return []string{writeStubTool(t, `case "$1" in /dev/*) echo "$1: 9";; *) echo "$1: 1";; esac`)}
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
